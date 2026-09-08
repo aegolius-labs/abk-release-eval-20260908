@@ -1,0 +1,504 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-08-27",
+  "refreshed_at_utc": "2026-09-04T21:54:53Z",
+  "owner": "aegolius-labs",
+  "authenticated_login": "MustacheMushroom",
+  "redactions_confirmed": true,
+  "github_app_installation": {
+    "account_login": "aegolius-labs",
+    "account_type": "Organization",
+    "events_include": ["issues", "repository", "sub_issues"]
+  },
+  "local_capabilities": {
+    "gh_cli_present": true,
+    "gh_cli_version": "2.98.0",
+    "gh_cli_authenticated": true,
+    "gh_cli_scopes": ["gist", "project", "read:org", "repo", "workflow"],
+    "direct_api_token_retrievable_without_recording": true,
+    "direct_api_transport_read_passed": true,
+    "gh_token_present": false,
+    "github_token_present": false
+  },
+  "organization_permissions": {
+    "membership_state": "active",
+    "membership_role": "admin",
+    "viewer_can_administer": true,
+    "viewer_can_create_projects": true,
+    "viewer_can_create_repositories": true,
+    "members_can_create_private_repositories": true,
+    "members_can_delete_repositories": true
+  },
+  "gh_and_api_capabilities": {
+    "repository_create_delete": true,
+    "project_create_delete_link_schema": true,
+    "complete_project_view_read": true,
+    "project_field_and_iteration_schema": true,
+    "hierarchy_and_dependency_read": true,
+    "hierarchy_and_dependency_write_methods_advertised": true,
+    "rest_remaining_at_probe": 4999,
+    "graphql_remaining_at_probe": 4905,
+    "search_remaining_at_probe": 30,
+    "project_field_database_id_name": "databaseId",
+    "project_field_schema_fix_verified": true,
+    "single_project_snapshot_read_passed": true,
+    "organization_project_discovery_passed": true,
+    "engine_snapshot_query_compatible": true,
+    "engine_snapshot_query_blocker": null,
+    "uninitialized_iteration_duration_zero_supported": true,
+    "gh_cli_root_parent_absence_404_supported": true,
+    "required_native_issue_types": ["Initiative", "Epic", "Feature", "Story", "Bug", "Task"],
+    "available_native_issue_types": [
+      "Task",
+      "Bug",
+      "Feature",
+      "Initiative",
+      "Theme",
+      "Epic",
+      "User Story",
+      "Tech Story"
+    ],
+    "missing_native_issue_types": ["Story"]
+  },
+  "mcp_exposed_capabilities": {
+    "repository_read": true,
+    "repository_create_delete": false,
+    "issues_labels": true,
+    "projects_read_write": false,
+    "fields_views_iterations": false,
+    "hierarchy_dependencies": false,
+    "native_issue_types": false,
+    "rate_limit": false
+  },
+  "canonical_release_repository": {
+    "name": "aegolius-labs/agentic-backlog-kit",
+    "absent": true
+  },
+  "scenarios": [
+    {
+      "backend": "gh",
+      "variant": "native",
+      "repository": "abk-eval-wave-c-r02-20260827-gh-26c954aa-native",
+      "repository_absent": true,
+      "project_title": "ABK Eval wave-c-r02-20260827-gh-26c954aa [native]",
+      "project_absence_verified": true,
+      "resource_create_digest": "b2b448ab9d0d0aec77421fce7a5452cde16eb50a0230ec2decdb52bcdc5847fa",
+      "preflight_passed": false,
+      "blockers": [
+        "required native issue type Story is absent"
+      ]
+    },
+    {
+      "backend": "gh",
+      "variant": "labels",
+      "repository": "abk-eval-wave-c-r02-20260827-gh-26c954aa-labels",
+      "repository_absent": false,
+      "repository_present_verified": true,
+      "project_title": "ABK Eval wave-c-r02-20260827-gh-26c954aa [labels]",
+      "project_absence_verified": false,
+      "project": {
+        "number": 4,
+        "owner": "aegolius-labs",
+        "repository_link_verified": true,
+        "title": "ABK Eval wave-c-r02-20260827-gh-26c954aa [labels]",
+        "url": "https://github.com/orgs/aegolius-labs/projects/4"
+      },
+      "resource_create_digest": "0d9d663fdca2e44d82fd5fb3637f8544c166a9461b49197bb864a2c28b1d69d4",
+      "resource_create": {
+        "recorded_at_utc": "2026-09-01T00:25:51Z",
+        "backend": "gh",
+        "confirmed_digest": "0d9d663fdca2e44d82fd5fb3637f8544c166a9461b49197bb864a2c28b1d69d4",
+        "owner_name_private_verified": true,
+        "repository_visibility": "private"
+      },
+      "bootstrap_plan": {
+        "action_count": 1,
+        "action_kinds": ["project.create"],
+        "digest": "59cbce716c843c26260100db38d714b8144735eb1789ca1ce84e5a77720bc93f",
+        "fresh_discovery": true,
+        "validated": true
+      },
+      "bootstrap_apply": {
+        "applied_actions": 1,
+        "confirmed_digest": "59cbce716c843c26260100db38d714b8144735eb1789ca1ce84e5a77720bc93f",
+        "fresh_discovery_drift_check": "passed",
+        "manifest_project_number": 4,
+        "status": "completed",
+        "transport": "gh"
+      },
+      "scaffold_plan": {
+        "action_count": 17,
+        "actions_by_kind": {
+          "project.field.create": 6,
+          "project.field.update_options": 1,
+          "project.view.create": 4,
+          "repository.label.create": 6
+        },
+        "digest": "2b3bb8788d9e3f60a84b4624d37c012b40cc0dca986ef8e710ee16eaf7a1cdfa",
+        "fresh_post_create_snapshot": true,
+        "validated": true
+      },
+      "scaffold_apply": {
+        "applied_actions": 17,
+        "confirmed_digest": "2b3bb8788d9e3f60a84b4624d37c012b40cc0dca986ef8e710ee16eaf7a1cdfa",
+        "fresh_discovery_drift_check": "passed",
+        "status": "completed",
+        "transport": "gh"
+      },
+      "scaffold_verification": {
+        "applied_actions": 3,
+        "confirmed_residual_digest": "e6ea32e21e629466b5e06465101fdb2bb12788340b0229b71eb5a64d37f8043d",
+        "post_apply_digest": "6a7cf1bd3ebc826313641484e1279d0947df3bb930c6a4da4a8ccfc84de517ef",
+        "post_apply_snapshot_fingerprint": "b3987e7dbfcf709499f0402edc7d0836a509ec02e2115d7fe71e024030e9abcb",
+        "remaining_action_count": 0,
+        "status": "completed",
+        "transport": "gh",
+        "zero_action_convergence": true
+      },
+      "read_only_recheck": {
+        "empty_iteration_field_retained": true,
+        "residual_action_count": 3,
+        "residual_actions_by_kind": {
+          "project.view.update": 3
+        },
+        "residual_digest": "e6ea32e21e629466b5e06465101fdb2bb12788340b0229b71eb5a64d37f8043d",
+        "snapshot_fingerprint": "f1947c91f723ffc314e9324b135470a0d165ee998115750b361796e7e58d7d12",
+        "status": "refresh_succeeded_with_residual_actions",
+        "zero_action_convergence": false
+      },
+      "iteration_initialization_plan": {
+        "action_count": 1,
+        "action_kinds": ["project.field.update_iterations"],
+        "as_of": "2026-09-07",
+        "digest": "31d7201388e5dd2a99bcece010855bc8d1e242ee604cd968031db9d98e56496e",
+        "manifest_fingerprint": "a914071b1a3e83048df19315369c4ba84a54ce4cfb5a3c0de4c3767ba1999e74",
+        "minimal_initialization": true,
+        "ready": false,
+        "resolved_iteration_id": null,
+        "snapshot_fingerprint": "b3987e7dbfcf709499f0402edc7d0836a509ec02e2115d7fe71e024030e9abcb",
+        "target": "Sprint 1",
+        "target_alias": "@current",
+        "validated": true
+      },
+      "iteration_initialization_apply": {
+        "applied_actions": 1,
+        "confirmed_digest": "31d7201388e5dd2a99bcece010855bc8d1e242ee604cd968031db9d98e56496e",
+        "post_apply_digest": "fcb7d6f9250d99e711bcc00e84ce0e8a26ef8a0e25ab9f675aa8637d4a293633",
+        "remaining_action_count": 0,
+        "resolved_iteration_id": "537ff376",
+        "status": "completed",
+        "target": "Sprint 1",
+        "transport": "gh"
+      },
+      "local_workflow": {
+        "ingested_item_count": 8,
+        "priority_order": [
+          "TASK-0001",
+          "FEAT-0001",
+          "INIT-0001",
+          "BUG-0001",
+          "EPIC-0001",
+          "STORY-0001",
+          "TASK-0002",
+          "STORY-0002"
+        ],
+        "sprint_capacity": 10,
+        "sprint_effort": 10,
+        "sprint_ready_to_commit": true,
+        "sprint_selected": ["TASK-0001", "BUG-0001", "STORY-0001", "TASK-0002"],
+        "validated": true
+      },
+      "sync_plan": {
+        "action_count": 25,
+        "actions_by_kind": {
+          "issue.add_dependency": 2,
+          "issue.create": 8,
+          "issue.set_parent": 7,
+          "project.add_item": 8
+        },
+        "digest": "9f0b5a8899e8f506359456edba855fe625368e65b335c793259e919d7d4cc050",
+        "manifest_fingerprint": "6c3f6469b805d32f74f35e4250c03a465050ffec0327d15470496f900575bd58",
+        "snapshot_fingerprint": "37efab002bf6f4993d8a1e0ec1cff6dbdf7f30cf32719ecf9428156a01a2cb59",
+        "validated": true,
+        "write_applied": true
+      },
+      "sync_apply": {
+        "applied_actions": 25,
+        "assertions_passed": true,
+        "canonical_reader_used": true,
+        "confirmed_digest": "9f0b5a8899e8f506359456edba855fe625368e65b335c793259e919d7d4cc050",
+        "managed_issue_count": 8,
+        "post_apply_digest": "c7ff56a0d7896a3d001a18fbd300c420e97cb69c1023aa9e60773a2023d8ab88",
+        "remaining_action_count": 0,
+        "status": "completed",
+        "transport": "gh"
+      },
+      "preflight_passed": true,
+      "blockers": []
+    },
+    {
+      "backend": "api",
+      "variant": "native",
+      "repository": "abk-eval-wave-c-r02-20260827-api-3f546dc6-native",
+      "repository_absent": true,
+      "project_title": "ABK Eval wave-c-r02-20260827-api-3f546dc6 [native]",
+      "project_absence_verified": true,
+      "resource_create_digest": "f858097150e5dd170f28eae9489b4641b066fffb474b2efdfa820a47e63bdfec",
+      "preflight_passed": false,
+      "blockers": [
+        "required native issue type Story is absent"
+      ]
+    },
+    {
+      "backend": "api",
+      "variant": "labels",
+      "repository": "abk-eval-wave-c-r02-20260827-api-3f546dc6-labels",
+      "repository_absent": false,
+      "repository_present_verified": true,
+      "project_title": "ABK Eval wave-c-r02-20260827-api-3f546dc6 [labels]",
+      "project_absence_verified": false,
+      "project": {
+        "number": 5,
+        "owner": "aegolius-labs",
+        "repository_link_verified": true,
+        "title": "ABK Eval wave-c-r02-20260827-api-3f546dc6 [labels]",
+        "url": "https://github.com/orgs/aegolius-labs/projects/5"
+      },
+      "resource_create_digest": "a1b87fea598b3aa4ac3ace439b7f50a03d91098a99f6973e0d44cc86f959a3d4",
+      "resource_create": {
+        "recorded_at_utc": "2026-09-01T00:25:51Z",
+        "backend": "api",
+        "confirmed_digest": "a1b87fea598b3aa4ac3ace439b7f50a03d91098a99f6973e0d44cc86f959a3d4",
+        "owner_name_private_verified": true,
+        "repository_visibility": "private"
+      },
+      "bootstrap_plan": {
+        "action_count": 1,
+        "action_kinds": ["project.create"],
+        "digest": "aada840054e62e78a3b8c8764bb1d7fcb6931725d9169d350dc2e56c7f1b1534",
+        "fresh_discovery": true,
+        "validated": true
+      },
+      "bootstrap_apply": {
+        "applied_actions": 0,
+        "confirmed_digest": "aada840054e62e78a3b8c8764bb1d7fcb6931725d9169d350dc2e56c7f1b1534",
+        "fresh_discovery_drift_check": "failed",
+        "status": "aborted_before_write",
+        "transport": "api"
+      },
+      "replacement_bootstrap_plan": {
+        "action_count": 1,
+        "action_kinds": ["project.create"],
+        "digest": "900772ffe9578dc34854fcb5af69bfd7038487d35049e2bf5b81f103c892948f",
+        "fresh_discovery": true,
+        "project_absent": true,
+        "validated": true
+      },
+      "replacement_bootstrap_apply": {
+        "applied_actions": 1,
+        "confirmed_digest": "900772ffe9578dc34854fcb5af69bfd7038487d35049e2bf5b81f103c892948f",
+        "fresh_discovery_drift_check": "passed",
+        "manifest_project_number": 5,
+        "status": "completed",
+        "transport": "api"
+      },
+      "scaffold_plan": {
+        "action_count": 17,
+        "actions_by_kind": {
+          "project.field.create": 6,
+          "project.field.update_options": 1,
+          "project.view.create": 4,
+          "repository.label.create": 6
+        },
+        "digest": "4eb8be39a13e8fa1b67c3c2f832a5fb2b3456b50e990a3593e79c95baf476676",
+        "fresh_post_create_snapshot": true,
+        "manifest_fingerprint": "5ee46cf96420942f8e5f6c3f55630cbd5c5f931350c49a90df1133e3cadfd19e",
+        "snapshot_fingerprint": "99a8991173bafb7e586aabfba397e507e178c3fa11c4e7b36150dc99ce7aaed4",
+        "validated": true,
+        "write_applied": true
+      },
+      "scaffold_apply": {
+        "applied_actions": 17,
+        "confirmed_digest": "4eb8be39a13e8fa1b67c3c2f832a5fb2b3456b50e990a3593e79c95baf476676",
+        "fresh_discovery_drift_check": "passed",
+        "status": "completed",
+        "transport": "api"
+      },
+      "scaffold_verification": {
+        "applied_actions": 3,
+        "confirmed_residual_digest": "e1b46140fdc0412977eb420dd19b3a4be5a107e160d965727c355dbd7bba15e2",
+        "observed_uninitialized_iteration": {
+          "active_count": 0,
+          "completed_count": 0,
+          "duration_days": 0,
+          "start_date": null
+        },
+        "post_apply_digest": "5e1cc098b181bda573054aa1c468a42b9f4600c31cc6779b41b333c4c7cd6f57",
+        "post_apply_snapshot_fingerprint": "22e95b39f740894d366258026b7661da80150767acdb7b81733fbc324ae68b2c",
+        "remaining_action_count": 0,
+        "status": "completed",
+        "transport": "api",
+        "zero_action_convergence": true
+      },
+      "iteration_initialization_plan": {
+        "action_count": 1,
+        "action_kinds": ["project.field.update_iterations"],
+        "as_of": "2026-09-07",
+        "digest": "9a7a4efd929044306d421ab33e1b452c1dac9d6252656e42043715e1c4b44d4f",
+        "manifest_fingerprint": "5ee46cf96420942f8e5f6c3f55630cbd5c5f931350c49a90df1133e3cadfd19e",
+        "minimal_initialization": true,
+        "ready": false,
+        "resolved_iteration_id": null,
+        "snapshot_fingerprint": "22e95b39f740894d366258026b7661da80150767acdb7b81733fbc324ae68b2c",
+        "target": "Sprint 1",
+        "target_alias": "@current",
+        "validated": true
+      },
+      "iteration_initialization_apply": {
+        "applied_actions": 1,
+        "confirmed_digest": "9a7a4efd929044306d421ab33e1b452c1dac9d6252656e42043715e1c4b44d4f",
+        "post_apply_digest": "0f58db792bcc6553483fe03b7021412f9ad01fb0e428165948af4d4620c8043b",
+        "remaining_action_count": 0,
+        "resolved_iteration_id": "e60f024c",
+        "status": "completed",
+        "target": "Sprint 1",
+        "transport": "api"
+      },
+      "local_workflow": {
+        "ingested_item_count": 8,
+        "priority_order": [
+          "TASK-0001",
+          "FEAT-0001",
+          "INIT-0001",
+          "BUG-0001",
+          "EPIC-0001",
+          "STORY-0001",
+          "TASK-0002",
+          "STORY-0002"
+        ],
+        "sprint_capacity": 10,
+        "sprint_effort": 10,
+        "sprint_ready_to_commit": true,
+        "sprint_selected": ["TASK-0001", "BUG-0001", "STORY-0001", "TASK-0002"],
+        "validated": true
+      },
+      "sync_plan": {
+        "action_count": 25,
+        "actions_by_kind": {
+          "issue.add_dependency": 2,
+          "issue.create": 8,
+          "issue.set_parent": 7,
+          "project.add_item": 8
+        },
+        "digest": "2fb6c820a50b31ced658b2d8cc7fb6bbe48f5108d55bc28009bc530778fef2ec",
+        "manifest_fingerprint": "4cee420ba700f3bd34ad4c15937872143e4e7baf878969d2de61b304a101d9cc",
+        "snapshot_fingerprint": "d35a51824f733face7498eb3c7c074bf5fd35c79c2a0ec49fb77da6f774e97a1",
+        "validated": true,
+        "write_applied": true
+      },
+      "sync_apply": {
+        "applied_actions": 25,
+        "assertions_passed": true,
+        "canonical_reader_used": true,
+        "confirmed_digest": "2fb6c820a50b31ced658b2d8cc7fb6bbe48f5108d55bc28009bc530778fef2ec",
+        "dependency_relationship_count": 2,
+        "immediate_recheck_digest": "7c974ff2459881200f12821f6d39ac42b71374c58202d3bdc50452bc900e4b01",
+        "immediate_recheck_residual_action_count": 8,
+        "managed_issue_count": 8,
+        "parent_relationship_count": 7,
+        "post_apply_digest": "29f097ff50fb1269be6eeefe2ae71ab7cc78e5e4c32efa52fa5317aa58b3a151",
+        "project_membership_count": 8,
+        "propagation_recheck_required": true,
+        "remaining_action_count": 0,
+        "status": "completed",
+        "transport": "api"
+      },
+      "preflight_passed": true,
+      "blockers": []
+    },
+    {
+      "backend": "mcp",
+      "variant": "native",
+      "repository": "abk-eval-wave-c-r02-20260827-mcp-0f109b76-native",
+      "repository_absent": true,
+      "project_title": "ABK Eval wave-c-r02-20260827-mcp-0f109b76 [native]",
+      "project_absence_verified": true,
+      "resource_create_digest": "246ad5ad28410cae65ef795e26fbf9940b264d9548fdbf1a5bbd7f1c036631f5",
+      "preflight_passed": false,
+      "blockers": [
+        "repository create/delete unavailable",
+        "Projects and complete views unavailable",
+        "fields and iterations unavailable",
+        "hierarchy and dependencies unavailable",
+        "native issue types unavailable",
+        "required native issue type Story is absent",
+        "rate-limit probe unavailable"
+      ]
+    },
+    {
+      "backend": "mcp",
+      "variant": "labels",
+      "repository": "abk-eval-wave-c-r02-20260827-mcp-0f109b76-labels",
+      "repository_absent": true,
+      "project_title": "ABK Eval wave-c-r02-20260827-mcp-0f109b76 [labels]",
+      "project_absence_verified": true,
+      "resource_create_digest": "455e1ce729c4620dc1a73ae8e615b2ffe54235f29d921431e42292bd6302fd70",
+      "preflight_passed": false,
+      "blockers": [
+        "repository create/delete unavailable",
+        "Projects and complete views unavailable",
+        "fields and iterations unavailable",
+        "hierarchy and dependencies unavailable",
+        "rate-limit probe unavailable"
+      ]
+    }
+  ],
+  "mutation_attempted": true,
+  "mutation_scope": "confirmed repository creation, two confirmed Project creations, two confirmed initial scaffold applies, two confirmed residual scaffold applies, two confirmed iteration initializations, two confirmed item synchronizations, and one confirmed cleanup Project deletion; cleanup stopped before repository deletion",
+  "cleanup": {
+    "api_target_actions_attempted": false,
+    "approved_plan_digest": "cd76b7cff4f650fd9e04da08619f4d0bdbe4e5fe6671b88aa6ac1ca70b80db90",
+    "canonical_publication_drift_detected": true,
+    "completed_safe_order_sequences": [1, 2, 3],
+    "deleted_resources": [
+      {
+        "kind": "project",
+        "node_id": "PVT_kwDOD0x0U84BiD5K",
+        "number": 4,
+        "owner": "aegolius-labs",
+        "title": "ABK Eval wave-c-r02-20260827-gh-26c954aa [labels]"
+      }
+    ],
+    "failed_action": {
+      "action": "delete_repository",
+      "backend": "gh",
+      "endpoint": "DELETE /repos/aegolius-labs/abk-eval-wave-c-r02-20260827-gh-26c954aa-labels",
+      "error_category": "repository_delete_request_failed",
+      "retry_attempted": false,
+      "sequence": 4
+    },
+    "new_plan_required": true,
+    "remaining_resources": [
+      {
+        "kind": "repository",
+        "node_id": "R_kgDOUKTD5Q",
+        "repository": "aegolius-labs/abk-eval-wave-c-r02-20260827-gh-26c954aa-labels"
+      },
+      {
+        "kind": "project",
+        "node_id": "PVT_kwDOD0x0U84BiD-Q",
+        "number": 5,
+        "owner": "aegolius-labs",
+        "title": "ABK Eval wave-c-r02-20260827-api-3f546dc6 [labels]"
+      },
+      {
+        "kind": "repository",
+        "node_id": "R_kgDOUKTEpg",
+        "repository": "aegolius-labs/abk-eval-wave-c-r02-20260827-api-3f546dc6-labels"
+      }
+    ],
+    "status": "aborted_on_first_failure"
+  },
+  "pending_write_gates": [],
+  "credentials_recorded": false
+}

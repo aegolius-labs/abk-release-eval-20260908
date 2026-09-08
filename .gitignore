@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+.artifacts/
+*.egg-info/
+.venv/
+.worktrees/
+
+# Disposable source inspection and generated runtime state
+.source-aio-agentic-sdlc/
+.agentic-backlog/cache/
+.agentic-backlog/evals/
+.agentic-backlog/receipts/
+.agentic-backlog/*.lock
+
+# Release preflight bundles and local publication receipts
+release-bundle/
+release-receipt.json

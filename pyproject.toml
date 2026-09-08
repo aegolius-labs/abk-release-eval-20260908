@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-backlog-kit"
+version = "0.1.0"
+description = "Deterministic GitHub Issues and Projects backlog workflows for agents"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Aegolius Labs" }]
+license = "PolyForm-Noncommercial-1.0.0"
+license-files = ["LICENSE.md", "COMMERCIAL.md"]
+dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+]
+
+[project.urls]
+Homepage = "https://github.com/aegolius-labs/agentic-backlog-kit"
+Repository = "https://github.com/aegolius-labs/agentic-backlog-kit"
+Issues = "https://github.com/aegolius-labs/agentic-backlog-kit/issues"
+
+[project.scripts]
+abk = "agentic_backlog_kit.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]

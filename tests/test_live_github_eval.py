@@ -1,0 +1,755 @@
+from __future__ import annotations
+
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from agentic_backlog_kit.manifest import validate_manifest
+
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+EVAL_ROOT = REPOSITORY_ROOT / "evals" / "live_github"
+
+
+class LiveGitHubEvaluationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        import sys
+
+        sys.path.insert(0, str(REPOSITORY_ROOT))
+        from evals.live_github import harness
+
+        cls.harness = harness
+
+    def _write_complete_evidence(self, root: Path, suite: dict, variant: dict) -> None:
+        evidence = root / variant["name"] / "evidence"
+        template = json.loads(
+            (EVAL_ROOT / "fixtures" / "manifest.template.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        manifest = self.harness.materialize_manifest(
+            template,
+            owner=suite["owner"],
+            repository=variant["repository"],
+            project_number=17 if variant["name"] == "native" else 18,
+            issue_type_mode=variant["name"],
+            iteration_start=suite["iteration_start"],
+        )
+        expected = json.loads(
+            (EVAL_ROOT / "expected-state.json").read_text(encoding="utf-8")
+        )
+
+        def write(relative: str, value: dict) -> None:
+            path = evidence / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+        write("manifest.json", manifest)
+        write(
+            "preflight.json",
+            {
+                "passed": True,
+                "backend": "gh",
+                "redactions_confirmed": True,
+                "authenticated_login": "evaluation-operator",
+                "organization_login": suite["owner"],
+                "permission_checks": {
+                    "repository_create_delete": True,
+                    "project_create_delete_link": True,
+                },
+                "capability_results": {
+                    "approved_disposable_target": True,
+                    "repository_absent": True,
+                    "project_absent": True,
+                    "fields_views_iterations": True,
+                    "issues_labels": True,
+                    "hierarchy_dependencies": True,
+                    "rate_limit_sufficient": True,
+                    "native_issue_types": True,
+                },
+            },
+        )
+        evidence.mkdir(parents=True, exist_ok=True)
+        (evidence / "commands.ndjson").write_text(
+            '{"step":"preflight","exit_code":0,"redacted":true}\n',
+            encoding="utf-8",
+        )
+        for stage in ("bootstrap", "scaffold", "sync"):
+            digest = "a" * 64
+            write(f"{stage}/plan.json", {"digest": digest, "actions": [{}]})
+            write(
+                f"{stage}/receipt.json",
+                {
+                    "plan_digest": digest,
+                    "status": "completed",
+                    "total_actions": 1,
+                    "applied_actions": 1,
+                    "completed_actions": [{}],
+                },
+            )
+        fields = [dict(value) for value in expected["fields"]]
+        sprint = next(value for value in fields if value["name"] == "Sprint")
+        sprint["id"] = "PVTF_sprint"
+        sprint["database_id"] = 123
+        sprint["iteration_configuration"] = {
+            "start_date": suite["iteration_start"],
+            "duration_days": 14,
+            "iterations": [
+                {
+                    "id": "ITER_1",
+                    "title": "Sprint 1",
+                    "start_date": suite["iteration_start"],
+                    "duration_days": 14,
+                    "completed": False,
+                },
+                {
+                    "id": "ITER_2",
+                    "title": "Sprint 2",
+                    "start_date": "2026-09-21",
+                    "duration_days": 14,
+                    "completed": False,
+                },
+            ],
+            "completed_iterations": [],
+        }
+        write(
+            "scaffold/after.json",
+            {
+                "fields": fields,
+                "views": expected["views"],
+                "labels": [
+                    {"name": value} for value in expected["required_type_labels"]
+                ],
+            },
+        )
+        write("scaffold/second-plan.json", {"action_count": 0, "actions": []})
+        write("ingestion/result.json", {"item_ids": variant["expected_item_ids"]})
+        write(
+            "prioritization/result.json",
+            {"items": [{"id": value} for value in variant["expected_priority_ids"]]},
+        )
+        write(
+            "sprint/plan.json",
+            {"items": [{"id": value} for value in variant["expected_sprint_ids"]]},
+        )
+        write(
+            "iterations/assertions.json",
+            {
+                "current_resolved": True,
+                "next_resolved": True,
+                "completed_rejected": True,
+                "duplicate_rejected": True,
+                "overlap_rejected": True,
+                "incomplete_metadata_rejected": True,
+                "extension_applied": True,
+                "server_identities_verified": True,
+                "second_plan_zero": True,
+            },
+        )
+        issues = []
+        for item in manifest["items"]:
+            issue = {
+                "abk_id": item["id"],
+                "type": item["type"] if variant["name"] == "native" else None,
+                "labels": (
+                    []
+                    if variant["name"] == "native"
+                    else [f"type:{item['type'].lower()}"]
+                ),
+                "parent_abk_id": item["parent"],
+                "depends_on_abk_ids": item["depends_on"],
+                "project_fields": {"Status": item["status"]},
+            }
+            issue["project_fields"].update(
+                {
+                    "Impact": item["impact"],
+                    "Effort": item["effort"],
+                    "Business Value": item["business_value"],
+                    "Enabler Value": item["enabler_value"],
+                }
+            )
+            if item["sprint"]:
+                issue["project_fields"]["Sprint"] = item["sprint"]
+            issues.append(issue)
+        from agentic_backlog_kit.priority import prioritize
+
+        priorities = {value.id: value.priority_score for value in prioritize(manifest)}
+        for issue in issues:
+            issue["project_fields"]["Priority"] = priorities[issue["abk_id"]]
+        write("sync/after.json", {"issues": issues})
+        write("sync/second-plan.json", {"action_count": 0, "actions": []})
+        write("assertions.json", {"passed": True})
+
+    def test_manifest_fixture_materializes_valid_native_and_label_variants(self) -> None:
+        template = json.loads(
+            (EVAL_ROOT / "fixtures" / "manifest.template.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        native = self.harness.materialize_manifest(
+            template,
+            owner="aegolius-labs",
+            repository="abk-eval-native",
+            project_number=17,
+            issue_type_mode="native",
+            iteration_start="2026-09-07",
+        )
+        labels = self.harness.materialize_manifest(
+            template,
+            owner="aegolius-labs",
+            repository="abk-eval-labels",
+            project_number=18,
+            issue_type_mode="labels",
+            iteration_start="2026-09-07",
+        )
+
+        self.assertEqual("native", validate_manifest(native)["github"]["issue_type_mode"])
+        self.assertEqual("labels", validate_manifest(labels)["github"]["issue_type_mode"])
+        self.assertEqual(
+            {"Initiative", "Epic", "Feature", "Story", "Bug", "Task"},
+            {item["type"] for item in native["items"]},
+        )
+        by_id = {item["id"]: item for item in native["items"]}
+        self.assertEqual("STORY-0001", by_id["TASK-0002"]["parent"])
+        self.assertEqual(["TASK-0001"], by_id["TASK-0002"]["depends_on"])
+
+    def test_resource_names_are_deterministic_bounded_and_seed_specific(self) -> None:
+        first = self.harness.resource_names("release candidate 42", "native")
+        again = self.harness.resource_names("release candidate 42", "native")
+        other = self.harness.resource_names("release candidate 43", "native")
+
+        self.assertEqual(first, again)
+        self.assertNotEqual(first, other)
+        self.assertRegex(first["repository"], r"^abk-eval-[a-z0-9-]+-native$")
+        self.assertLessEqual(len(first["repository"]), 100)
+        self.assertIn(first["token"], first["project_title"])
+
+    def test_prepared_suite_covers_lifecycle_and_all_backends(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            suite = self.harness.prepare_suite(
+                Path(temporary),
+                owner="aegolius-labs",
+                run_id="wave-c-2026-09-07-001",
+                iteration_start="2026-09-07",
+                backend="gh",
+            )
+            repeated = self.harness.prepare_suite(
+                Path(temporary) / "repeat",
+                owner="aegolius-labs",
+                run_id="wave-c-2026-09-07-001",
+                iteration_start="2026-09-07",
+                backend="gh",
+            )
+
+            self.assertEqual(suite, repeated)
+            self.assertFalse(suite["mutation_authorized"])
+            self.assertEqual("gh", suite["selected_backend"])
+            self.assertEqual(["api", "gh", "mcp"], sorted(suite["backend_matrix"]))
+            capabilities = set(suite["coverage"])
+            self.assertTrue(
+                {
+                    "bootstrap",
+                    "scaffold",
+                    "ingestion",
+                    "prioritization",
+                    "sprint_planning",
+                    "sync_apply_verify",
+                    "second_plan_zero",
+                    "hierarchy",
+                    "dependencies",
+                    "fields",
+                    "iterations",
+                    "views",
+                    "native_issue_types",
+                    "label_fallback",
+                }.issubset(capabilities)
+            )
+            mutating = [step for step in suite["steps"] if step["mutates"]]
+            self.assertTrue(mutating)
+            self.assertTrue(
+                all(step["confirmation"] == "reviewed-plan-digest" for step in mutating)
+            )
+            self.assertNotEqual(
+                suite["execution_confirmation"], suite["cleanup_confirmation"]
+            )
+            self.assertTrue(
+                all(variant["expected_sprint_ids"] for variant in suite["variants"])
+            )
+
+    def test_default_run_never_calls_runner_and_execution_needs_exact_digest(self) -> None:
+        calls: list[dict] = []
+
+        def runner(step: dict) -> None:
+            calls.append(step)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            suite = self.harness.prepare_suite(
+                Path(temporary),
+                owner="aegolius-labs",
+                run_id="dry-run-proof",
+                iteration_start="2026-09-07",
+                backend="gh",
+            )
+            result = self.harness.run_suite(suite, runner=runner)
+            self.assertEqual("dry-run", result["status"])
+            self.assertEqual([], calls)
+
+            with self.assertRaisesRegex(self.harness.EvaluationSafetyError, "digest"):
+                self.harness.run_suite(
+                    suite, execute=True, confirmation="wrong", runner=runner
+                )
+            self.assertEqual([], calls)
+            with self.assertRaisesRegex(
+                self.harness.EvaluationSafetyError, "reviewed plan digest"
+            ):
+                self.harness.run_suite(
+                    suite,
+                    execute=True,
+                    confirmation=suite["execution_confirmation"],
+                    runner=runner,
+                )
+            self.assertEqual([], calls)
+
+    def test_execution_requires_variant_specific_target_bound_digests(self) -> None:
+        calls: list[dict] = []
+        with tempfile.TemporaryDirectory() as temporary:
+            suite = self.harness.prepare_suite(
+                Path(temporary),
+                owner="aegolius-labs",
+                run_id="variant-digest-proof",
+                iteration_start="2026-09-07",
+                backend="mcp",
+            )
+            shared = {
+                step["id"]: "a" * 64
+                for step in suite["steps"]
+                if step["mutates"]
+            }
+            with self.assertRaisesRegex(
+                self.harness.EvaluationSafetyError, "native:resource-create"
+            ):
+                self.harness.run_suite(
+                    suite,
+                    execute=True,
+                    confirmation=suite["execution_confirmation"],
+                    reviewed_digests=shared,
+                    runner=calls.append,
+                )
+
+            reviewed = {}
+            for variant in suite["variants"]:
+                for step in suite["steps"]:
+                    if not step["mutates"]:
+                        continue
+                    key = f"{variant['name']}:{step['id']}"
+                    reviewed[key] = (
+                        variant["resource_create_action"]["digest"]
+                        if step["id"] == "resource-create"
+                        else "a" * 64
+                    )
+            result = self.harness.run_suite(
+                suite,
+                execute=True,
+                confirmation=suite["execution_confirmation"],
+                reviewed_digests=reviewed,
+                runner=calls.append,
+            )
+
+        self.assertEqual("completed", result["status"])
+        resource_calls = [call for call in calls if call["id"] == "resource-create"]
+        self.assertEqual(2, len(resource_calls))
+        self.assertNotEqual(
+            resource_calls[0]["reviewed_plan_digest"],
+            resource_calls[1]["reviewed_plan_digest"],
+        )
+
+    def test_evidence_contract_rejects_incomplete_preflight_claim(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            suite = self.harness.prepare_suite(
+                root,
+                owner="aegolius-labs",
+                run_id="preflight-contract-proof",
+                iteration_start="2026-09-07",
+                backend="gh",
+            )
+            for variant in suite["variants"]:
+                self._write_complete_evidence(root, suite, variant)
+            preflight_path = root / "native" / "evidence" / "preflight.json"
+            preflight_path.write_text(
+                json.dumps(
+                    {"passed": True, "backend": "gh", "redactions_confirmed": True}
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            report = self.harness.verify_evidence(root, suite)
+
+        self.assertFalse(report["passed"])
+        self.assertTrue(
+            any("authenticated_login" in value for value in report["failures"])
+        )
+        self.assertTrue(any("permission check" in value for value in report["failures"]))
+        self.assertTrue(any("capability" in value for value in report["failures"]))
+
+    def test_cleanup_requires_distinct_exact_confirmation(self) -> None:
+        calls: list[dict] = []
+        with tempfile.TemporaryDirectory() as temporary:
+            suite = self.harness.prepare_suite(
+                Path(temporary),
+                owner="aegolius-labs",
+                run_id="cleanup-proof",
+                iteration_start="2026-09-07",
+                backend="gh",
+            )
+            with self.assertRaisesRegex(self.harness.EvaluationSafetyError, "cleanup"):
+                self.harness.run_cleanup(
+                    suite,
+                    confirmation=suite["execution_confirmation"],
+                    runner=calls.append,
+                )
+            with self.assertRaisesRegex(
+                self.harness.EvaluationSafetyError, "evidence"
+            ):
+                self.harness.run_cleanup(
+                    suite,
+                    confirmation=suite["cleanup_confirmation"],
+                    runner=calls.append,
+                )
+        self.assertEqual([], calls)
+
+    def test_evidence_contract_accepts_complete_synthetic_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            suite = self.harness.prepare_suite(
+                root,
+                owner="aegolius-labs",
+                run_id="evidence-proof",
+                iteration_start="2026-09-07",
+                backend="gh",
+            )
+            for variant in suite["variants"]:
+                self._write_complete_evidence(root, suite, variant)
+
+            report = self.harness.verify_evidence(root, suite)
+
+        self.assertTrue(report["passed"])
+        self.assertEqual([], report["failures"])
+        self.assertTrue(all(result["passed"] for result in report["variants"]))
+
+    def test_evidence_contract_rejects_drift_and_nonzero_second_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            suite = self.harness.prepare_suite(
+                root,
+                owner="aegolius-labs",
+                run_id="negative-evidence-proof",
+                iteration_start="2026-09-07",
+                backend="gh",
+            )
+            for variant in suite["variants"]:
+                self._write_complete_evidence(root, suite, variant)
+            native = root / "native" / "evidence"
+            second_plan = native / "sync" / "second-plan.json"
+            second_plan.write_text(
+                json.dumps({"action_count": 1, "actions": [{"kind": "issue.update"}]})
+                + "\n",
+                encoding="utf-8",
+            )
+            after_path = native / "scaffold" / "after.json"
+            after = json.loads(after_path.read_text(encoding="utf-8"))
+            next(view for view in after["views"] if view["name"] == "Kanban")[
+                "filter"
+            ] = "is:issue"
+            after_path.write_text(json.dumps(after) + "\n", encoding="utf-8")
+
+            report = self.harness.verify_evidence(root, suite)
+
+        self.assertFalse(report["passed"])
+        self.assertTrue(
+            any("Kanban configuration differs" in value for value in report["failures"])
+        )
+        self.assertTrue(
+            any("second sync plan is not empty" in value for value in report["failures"])
+        )
+
+    def test_expected_state_requires_full_view_iteration_and_type_assertions(self) -> None:
+        expected = json.loads(
+            (EVAL_ROOT / "expected-state.json").read_text(encoding="utf-8")
+        )
+        view_names = {view["name"] for view in expected["views"]}
+        field_names = {field["name"] for field in expected["fields"]}
+
+        self.assertEqual(
+            {"Backlog", "Kanban", "Current Sprint", "Roadmap"}, view_names
+        )
+        self.assertTrue(
+            {"layout", "filter", "visible_fields", "sort_by", "group_by"}.issubset(
+                expected["view_assertion_dimensions"]
+            )
+        )
+        self.assertTrue(
+            {"Status", "Sprint", "Impact", "Effort", "Business Value", "Enabler Value", "Priority"}.issubset(
+                field_names
+            )
+        )
+        self.assertEqual("@current", expected["iterations"]["required_alias"])
+        self.assertEqual("native", expected["issue_type_assertions"]["native"]["mode"])
+        self.assertEqual("labels", expected["issue_type_assertions"]["labels"]["mode"])
+
+    def test_wave_c_capability_gap_covers_six_scenarios_and_resource_create_evidence(self) -> None:
+        path = EVAL_ROOT / "capability-gap.wave-c-r02.json"
+        raw = path.read_text(encoding="utf-8")
+        audit = json.loads(raw)
+
+        self.assertTrue(audit["redactions_confirmed"])
+        self.assertTrue(audit["mutation_attempted"])
+        self.assertEqual(
+            "confirmed repository creation, two confirmed Project creations, two confirmed initial scaffold applies, two confirmed residual scaffold applies, two confirmed iteration initializations, two confirmed item synchronizations, and one confirmed cleanup Project deletion; cleanup stopped before repository deletion",
+            audit["mutation_scope"],
+        )
+        self.assertFalse(audit["credentials_recorded"])
+        self.assertEqual(6, len(audit["scenarios"]))
+        self.assertEqual(
+            {
+                (backend, variant)
+                for backend in ("gh", "api", "mcp")
+                for variant in ("native", "labels")
+            },
+            {
+                (scenario["backend"], scenario["variant"])
+                for scenario in audit["scenarios"]
+            },
+        )
+        self.assertEqual(
+            {("gh", "labels"), ("api", "labels")},
+            {
+                (scenario["backend"], scenario["variant"])
+                for scenario in audit["scenarios"]
+                if scenario["preflight_passed"]
+            },
+        )
+        applied = [
+            scenario
+            for scenario in audit["scenarios"]
+            if "resource_create" in scenario
+        ]
+        self.assertEqual(
+            {("gh", "labels"), ("api", "labels")},
+            {
+                (scenario["backend"], scenario["variant"])
+                for scenario in applied
+            },
+        )
+        for scenario in applied:
+            resource = scenario["resource_create"]
+            bootstrap = scenario["bootstrap_plan"]
+            self.assertFalse(scenario["repository_absent"])
+            self.assertTrue(scenario["repository_present_verified"])
+            self.assertEqual(scenario["backend"], resource["backend"])
+            self.assertEqual(
+                scenario["resource_create_digest"], resource["confirmed_digest"]
+            )
+            self.assertTrue(resource["owner_name_private_verified"])
+            self.assertEqual("private", resource["repository_visibility"])
+            self.assertTrue(bootstrap["fresh_discovery"])
+            self.assertTrue(bootstrap["validated"])
+            self.assertEqual(1, bootstrap["action_count"])
+            self.assertEqual(["project.create"], bootstrap["action_kinds"])
+        gh_labels = next(
+            scenario
+            for scenario in audit["scenarios"]
+            if (scenario["backend"], scenario["variant"]) == ("gh", "labels")
+        )
+        self.assertFalse(gh_labels["project_absence_verified"])
+        self.assertEqual(4, gh_labels["project"]["number"])
+        self.assertTrue(gh_labels["project"]["repository_link_verified"])
+        self.assertEqual("completed", gh_labels["bootstrap_apply"]["status"])
+        self.assertEqual(4, gh_labels["bootstrap_apply"]["manifest_project_number"])
+        self.assertTrue(gh_labels["scaffold_plan"]["fresh_post_create_snapshot"])
+        self.assertTrue(gh_labels["scaffold_plan"]["validated"])
+        self.assertEqual(17, gh_labels["scaffold_plan"]["action_count"])
+        self.assertEqual("completed", gh_labels["scaffold_apply"]["status"])
+        self.assertEqual(17, gh_labels["scaffold_apply"]["applied_actions"])
+        self.assertEqual("completed", gh_labels["scaffold_verification"]["status"])
+        self.assertTrue(gh_labels["scaffold_verification"]["zero_action_convergence"])
+        self.assertEqual(3, gh_labels["scaffold_verification"]["applied_actions"])
+        self.assertEqual(0, gh_labels["scaffold_verification"]["remaining_action_count"])
+        recheck = gh_labels["read_only_recheck"]
+        self.assertEqual("refresh_succeeded_with_residual_actions", recheck["status"])
+        self.assertTrue(recheck["empty_iteration_field_retained"])
+        self.assertFalse(recheck["zero_action_convergence"])
+        self.assertEqual(3, recheck["residual_action_count"])
+        self.assertEqual({"project.view.update": 3}, recheck["residual_actions_by_kind"])
+        iteration = gh_labels["iteration_initialization_plan"]
+        self.assertEqual("Sprint 1", iteration["target"])
+        self.assertEqual("@current", iteration["target_alias"])
+        self.assertEqual("2026-09-07", iteration["as_of"])
+        self.assertTrue(iteration["minimal_initialization"])
+        self.assertFalse(iteration["ready"])
+        self.assertIsNone(iteration["resolved_iteration_id"])
+        self.assertEqual(1, iteration["action_count"])
+        self.assertEqual(
+            ["project.field.update_iterations"], iteration["action_kinds"]
+        )
+        iteration_apply = gh_labels["iteration_initialization_apply"]
+        self.assertEqual("completed", iteration_apply["status"])
+        self.assertEqual(1, iteration_apply["applied_actions"])
+        self.assertEqual(0, iteration_apply["remaining_action_count"])
+        self.assertEqual("537ff376", iteration_apply["resolved_iteration_id"])
+        local_workflow = gh_labels["local_workflow"]
+        self.assertEqual(8, local_workflow["ingested_item_count"])
+        self.assertTrue(local_workflow["sprint_ready_to_commit"])
+        self.assertEqual(10, local_workflow["sprint_effort"])
+        self.assertEqual(
+            ["TASK-0001", "BUG-0001", "STORY-0001", "TASK-0002"],
+            local_workflow["sprint_selected"],
+        )
+        gh_sync = gh_labels["sync_plan"]
+        self.assertTrue(gh_sync["validated"])
+        self.assertTrue(gh_sync["write_applied"])
+        self.assertEqual(25, gh_sync["action_count"])
+        self.assertEqual(
+            {
+                "issue.add_dependency": 2,
+                "issue.create": 8,
+                "issue.set_parent": 7,
+                "project.add_item": 8,
+            },
+            gh_sync["actions_by_kind"],
+        )
+        gh_sync_apply = gh_labels["sync_apply"]
+        self.assertEqual("completed", gh_sync_apply["status"])
+        self.assertEqual(25, gh_sync_apply["applied_actions"])
+        self.assertEqual(0, gh_sync_apply["remaining_action_count"])
+        self.assertEqual(8, gh_sync_apply["managed_issue_count"])
+        self.assertTrue(gh_sync_apply["canonical_reader_used"])
+        self.assertTrue(gh_sync_apply["assertions_passed"])
+        api_labels = next(
+            scenario
+            for scenario in audit["scenarios"]
+            if (scenario["backend"], scenario["variant"]) == ("api", "labels")
+        )
+        self.assertFalse(api_labels["project_absence_verified"])
+        self.assertEqual("aborted_before_write", api_labels["bootstrap_apply"]["status"])
+        self.assertEqual(0, api_labels["bootstrap_apply"]["applied_actions"])
+        self.assertTrue(api_labels["replacement_bootstrap_plan"]["fresh_discovery"])
+        self.assertTrue(api_labels["replacement_bootstrap_plan"]["validated"])
+        self.assertEqual(1, api_labels["replacement_bootstrap_plan"]["action_count"])
+        self.assertEqual(5, api_labels["project"]["number"])
+        self.assertTrue(api_labels["project"]["repository_link_verified"])
+        self.assertEqual(
+            "completed", api_labels["replacement_bootstrap_apply"]["status"]
+        )
+        self.assertEqual(
+            5, api_labels["replacement_bootstrap_apply"]["manifest_project_number"]
+        )
+        self.assertTrue(api_labels["scaffold_plan"]["fresh_post_create_snapshot"])
+        self.assertTrue(api_labels["scaffold_plan"]["validated"])
+        self.assertEqual(17, api_labels["scaffold_plan"]["action_count"])
+        self.assertTrue(api_labels["scaffold_plan"]["write_applied"])
+        self.assertEqual("completed", api_labels["scaffold_apply"]["status"])
+        self.assertEqual(17, api_labels["scaffold_apply"]["applied_actions"])
+        api_verification = api_labels["scaffold_verification"]
+        self.assertEqual("completed", api_verification["status"])
+        self.assertTrue(api_verification["zero_action_convergence"])
+        self.assertEqual(3, api_verification["applied_actions"])
+        self.assertEqual(0, api_verification["remaining_action_count"])
+        self.assertEqual(
+            0, api_verification["observed_uninitialized_iteration"]["duration_days"]
+        )
+        api_iteration = api_labels["iteration_initialization_plan"]
+        self.assertEqual("Sprint 1", api_iteration["target"])
+        self.assertEqual("@current", api_iteration["target_alias"])
+        self.assertTrue(api_iteration["minimal_initialization"])
+        self.assertFalse(api_iteration["ready"])
+        self.assertIsNone(api_iteration["resolved_iteration_id"])
+        self.assertEqual(1, api_iteration["action_count"])
+        api_iteration_apply = api_labels["iteration_initialization_apply"]
+        self.assertEqual("completed", api_iteration_apply["status"])
+        self.assertEqual(1, api_iteration_apply["applied_actions"])
+        self.assertEqual(0, api_iteration_apply["remaining_action_count"])
+        self.assertEqual("e60f024c", api_iteration_apply["resolved_iteration_id"])
+        api_local_workflow = api_labels["local_workflow"]
+        self.assertEqual(8, api_local_workflow["ingested_item_count"])
+        self.assertTrue(api_local_workflow["sprint_ready_to_commit"])
+        self.assertEqual(10, api_local_workflow["sprint_effort"])
+        self.assertEqual(
+            ["TASK-0001", "BUG-0001", "STORY-0001", "TASK-0002"],
+            api_local_workflow["sprint_selected"],
+        )
+        api_sync = api_labels["sync_plan"]
+        self.assertTrue(api_sync["validated"])
+        self.assertTrue(api_sync["write_applied"])
+        self.assertEqual(25, api_sync["action_count"])
+        api_sync_apply = api_labels["sync_apply"]
+        self.assertEqual("completed", api_sync_apply["status"])
+        self.assertEqual(25, api_sync_apply["applied_actions"])
+        self.assertEqual(0, api_sync_apply["remaining_action_count"])
+        self.assertEqual(8, api_sync_apply["managed_issue_count"])
+        self.assertTrue(api_sync_apply["canonical_reader_used"])
+        self.assertTrue(api_sync_apply["assertions_passed"])
+        self.assertEqual(8, api_sync_apply["project_membership_count"])
+        self.assertEqual(7, api_sync_apply["parent_relationship_count"])
+        self.assertEqual(2, api_sync_apply["dependency_relationship_count"])
+        self.assertTrue(api_sync_apply["propagation_recheck_required"])
+        self.assertEqual([], audit["pending_write_gates"])
+        cleanup = audit["cleanup"]
+        self.assertEqual("aborted_on_first_failure", cleanup["status"])
+        self.assertEqual([1, 2, 3], cleanup["completed_safe_order_sequences"])
+        self.assertEqual(4, cleanup["failed_action"]["sequence"])
+        self.assertEqual("delete_repository", cleanup["failed_action"]["action"])
+        self.assertFalse(cleanup["failed_action"]["retry_attempted"])
+        self.assertFalse(cleanup["api_target_actions_attempted"])
+        self.assertTrue(cleanup["canonical_publication_drift_detected"])
+        self.assertTrue(cleanup["new_plan_required"])
+        self.assertTrue(audit["local_capabilities"]["gh_cli_authenticated"])
+        self.assertTrue(
+            audit["local_capabilities"]["direct_api_transport_read_passed"]
+        )
+        self.assertTrue(
+            audit["gh_and_api_capabilities"]["engine_snapshot_query_compatible"]
+        )
+        self.assertTrue(
+            audit["gh_and_api_capabilities"][
+                "uninitialized_iteration_duration_zero_supported"
+            ]
+        )
+        self.assertTrue(
+            audit["gh_and_api_capabilities"][
+                "gh_cli_root_parent_absence_404_supported"
+            ]
+        )
+        self.assertEqual(
+            ["Story"], audit["gh_and_api_capabilities"]["missing_native_issue_types"]
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            generated = {}
+            for backend in ("gh", "api", "mcp"):
+                suite = self.harness.prepare_suite(
+                    Path(temporary) / backend,
+                    owner=audit["owner"],
+                    run_id=f"wave-c-r02-20260827-{backend}",
+                    iteration_start="2026-09-07",
+                    backend=backend,
+                )
+                for variant in suite["variants"]:
+                    generated[(backend, variant["name"])] = variant
+            for scenario in audit["scenarios"]:
+                variant = generated[(scenario["backend"], scenario["variant"])]
+                self.assertEqual(scenario["repository"], variant["repository"])
+                self.assertEqual(scenario["project_title"], variant["project_title"])
+                self.assertEqual(
+                    scenario["resource_create_digest"],
+                    variant["resource_create_action"]["digest"],
+                )
+        self.assertNotIn("authorization:", raw.lower())
+        self.assertNotIn("bearer ", raw.lower())
+
+
+if __name__ == "__main__":
+    unittest.main()
