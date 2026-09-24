@@ -18,6 +18,13 @@ The format follows Keep a Changelog, and releases use semantic versioning.
   Labs reusable Conventional Release workflow, guarded by a dry-run version
   computation, package/plugin preflight, and post-upload asset verification.
 
+## [0.1.1] - 2026-09-23
+
+### Fixed
+
+- Fixture-only release that exercises hosted publisher recovery after draft
+  creation and partial asset upload (R14, S-R14-2).
+
 ## [0.1.0] - 2026-09-04
 
 ### Changed
@@ -54,4 +61,5 @@ The format follows Keep a Changelog, and releases use semantic versioning.
 - Digest-confirmed scaffold and synchronization plans.
 
 [Unreleased]: https://github.com/aegolius-labs/agentic-backlog-kit/compare/v0.1.0...HEAD
+[0.1.1]: https://github.com/aegolius-labs/agentic-backlog-kit/releases/tag/v0.1.1
 [0.1.0]: https://github.com/aegolius-labs/agentic-backlog-kit/releases/tag/v0.1.0

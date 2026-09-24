@@ -14,7 +14,7 @@ from tests.test_release_check import ROOT, _write_artifacts
 class ReleaseInventoryTests(unittest.TestCase):
     def build(self, dist, bundle, **overrides):
         options = dict(repository='aegolius-labs/agentic-backlog-kit', sha='a' * 40,
-                       tag='v0.1.0', tag_state='b' * 64, notes='Reviewed release notes')
+                       tag='v0.1.1', tag_state='b' * 64, notes='Reviewed release notes')
         options.update(overrides)
         return create_inventory(ROOT, dist, bundle, **options)
 
@@ -30,7 +30,7 @@ class ReleaseInventoryTests(unittest.TestCase):
             data = json.loads(raw)
             self.assertEqual(result, hashlib.sha256(raw).hexdigest())
             self.assertEqual('a' * 40, data['candidate_sha'])
-            self.assertEqual('v0.1.0', data['tag'])
+            self.assertEqual('v0.1.1', data['tag'])
             self.assertEqual('b' * 64, data['tag_state_sha256'])
             self.assertEqual(2, len(data['assets']))
             self.assertEqual(3, len(list(bundle.iterdir())))
@@ -44,7 +44,7 @@ class ReleaseInventoryTests(unittest.TestCase):
             root = Path(directory)
             _write_artifacts(root)
             with self.assertRaisesRegex(ReleaseCheckError, 'does not match'):
-                self.build(root, root / 'bundle', tag='v0.1.1')
+                self.build(root, root / 'bundle', tag='v0.1.2')
             self.assertFalse((root / 'bundle').exists())
 
     def test_rejects_stale_bundle_and_extra_distribution(self):
